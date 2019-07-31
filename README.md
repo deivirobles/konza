@@ -9,6 +9,7 @@ This is a project API for manage simple projects
 `cd- konza-api`
 `npm i`
 `npm start`
+`cp .env.example .env`
 
 ## Development
 
