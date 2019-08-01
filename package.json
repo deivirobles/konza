@@ -19,11 +19,15 @@
     "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.2.0",
     "eslint-plugin-import": "^2.18.2",
+    "express-request-id": "^1.4.1",
     "nodemon": "^1.19.1"
   },
   "dependencies": {
     "cross-env": "^5.2.0",
     "dotenv": "^8.0.0",
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "morgan": "^1.9.1",
+    "strip-final-newline": "^2.0.0",
+    "winston": "^3.2.1"
   }
 }
