@@ -1,6 +1,7 @@
 const router = require("express").Router();
 
 const controller = require("./controller");
+const tasksRouter = require("./../tasks/routes.js");
 
 /*
  * /api/tasks/     GET     GET ALL
@@ -22,5 +23,7 @@ router
   .get(controller.read)
   .put(controller.update)
   .delete(controller.delete);
+
+router.use("/:projectId/tasks", tasksRouter);
 
 module.exports = router;

@@ -17,8 +17,26 @@ const fields = {
   },
 };
 
-const project = new Schema(fields, {
-  timestamps: true,
-});
+const references = {
+  userId: {
+    type: Schema.Types.ObjectId,
+    ref: "user",
+    required: true,
+  },
+};
 
-module.exports = mongoose.model("project", project);
+const project = new Schema(
+  {
+    ...fields,
+    ...references,
+  },
+  {
+    timestamps: true,
+  }
+);
+
+module.exports = {
+  Model: mongoose.model("project", project),
+  fields,
+  references,
+};
