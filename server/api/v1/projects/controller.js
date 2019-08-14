@@ -1,11 +1,27 @@
 const HTTP_STATUS_CODE = require("http-status-codes");
 
-const Model = require("./model");
+const { Model, fields, references } = require("./model");
 const { paginationParseParams } = require("./../../../utils");
+const { sortParseParams, sortCompactToStr } = require("./../../../utils");
+const { filterByNested } = require("./../../../utils");
+
+/*
+ * Obtenemos un Array con los nombres de las llaves
+ * de las referencias
+ */
+const referencesNames = Object.getOwnPropertyNames(references);
 
 exports.id = async (req, res, next, id) => {
   try {
-    const doc = await Model.findById(id).exec();
+    /*
+     * Creamos una cadena con los nombres de las
+     * referencias separadas por espacio pues asi
+     * lo requiere el metodo populate
+     */
+    const populate = referencesNames.join(" ");
+    const doc = await Model.findById(id)
+      .populate(populate)
+      .exec();
     if (doc) {
       req.doc = doc;
       next();
@@ -22,8 +38,10 @@ exports.id = async (req, res, next, id) => {
 
 exports.create = async (req, res, next) => {
   const { body = {} } = req;
+
   try {
     const doc = await Model.create(body);
+
     res.status(HTTP_STATUS_CODE.CREATED);
     res.json({
       data: doc,
@@ -36,13 +54,28 @@ exports.create = async (req, res, next) => {
 };
 
 exports.all = async (req, res, next) => {
-  const { query = {} } = req;
+  const { query = {}, params = {} } = req;
   const { limit, page, skip } = paginationParseParams(query);
+  const { sortBy, direction } = sortParseParams(query, fields);
+  const sort = sortCompactToStr(sortBy, direction);
+  /*
+   * Invocamos la función filterByNested para obtener
+   * las llaves si es el caso por las cuales vamos a
+   * el listado y el nuevo populate basado en la
+   * diferencia entre las referencias del modelo y
+   * las llaves de los parametros enviados para no
+   * tener que hacer populate por la llave por la
+   * cual estamos filtrado o de alguna manera la
+   * llave padre
+   */
+  const { filters, populate } = filterByNested(params, referencesNames);
 
   try {
-    const all = Model.find()
+    const all = Model.find(filters)
+      .sort(sort)
       .skip(skip)
       .limit(limit)
+      .populate(populate)
       .exec();
     const count = Model.countDocuments();
 
@@ -53,6 +86,8 @@ exports.all = async (req, res, next) => {
       success: true,
       statusCode: HTTP_STATUS_CODE.OK,
       meta: {
+        sortBy,
+        direction,
         limit,
         skip,
         page,
@@ -65,7 +100,8 @@ exports.all = async (req, res, next) => {
 };
 
 exports.read = (req, res, next) => {
-  const { doc = {} } = req;
+  const { doc } = req;
+
   res.json({
     data: doc,
     success: true,
@@ -75,12 +111,13 @@ exports.read = (req, res, next) => {
 
 exports.update = async (req, res, next) => {
   try {
-    const { body = {}, doc = {} } = req;
+    const { body = {}, doc } = req;
+
     Object.assign(doc, body);
     const updated = await doc.save();
 
     res.json({
-      data: document,
+      data: updated,
       success: true,
       statusCode: HTTP_STATUS_CODE.OK,
     });
@@ -91,7 +128,8 @@ exports.update = async (req, res, next) => {
 
 exports.delete = async (req, res, next) => {
   try {
-    const { doc = {} } = req;
+    const { doc } = req;
+
     const deleted = await doc.remove();
     res.json({
       data: deleted,
